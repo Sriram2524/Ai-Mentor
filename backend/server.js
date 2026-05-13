@@ -98,8 +98,18 @@ const startServer = async () => {
     await sequelize.sync({ alter: true });
     console.log("✅ Database models synced");
 
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
       console.log(`🚀 Server running on http://localhost:${PORT}`);
+    });
+
+    server.on("error", (error) => {
+      if (error.code === "EADDRINUSE") {
+        console.error(
+          `❌ Port ${PORT} is already in use. Change the PORT in backend/.env or stop the process using that port.`
+        );
+        process.exit(1);
+      }
+      throw error;
     });
   } catch (error) {
     console.error("❌ Server failed:", error);

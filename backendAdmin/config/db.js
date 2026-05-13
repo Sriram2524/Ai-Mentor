@@ -3,21 +3,30 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-let sequelize;
+const useSSL =
+  process.env.DB_SSL === "true" ||
+  process.env.USE_DB_SSL === "true" ||
+  Boolean(process.env.DB_HOST?.includes(".neon.tech"));
 
-if (process.env.NEON_DATABASE_URL) {
-  // Using Neon Database
-  sequelize = new Sequelize(process.env.NEON_DATABASE_URL, {
-    dialectOptions: {
+const dialectOptions = useSSL
+  ? {
       ssl: {
         require: true,
         rejectUnauthorized: false,
       },
-    },
+    }
+  : {};
+
+let sequelize;
+
+if (process.env.NEON_DATABASE_URL) {
+  // Using Neon Database via connection string
+  sequelize = new Sequelize(process.env.NEON_DATABASE_URL, {
+    dialectOptions,
     logging: false,
   });
 } else {
-  // Using Local PostgreSQL
+  // Using PostgreSQL via host/port environment variables
   sequelize = new Sequelize(
     process.env.DB_NAME || "upboskills",
     process.env.DB_USER || "postgres",
@@ -27,6 +36,7 @@ if (process.env.NEON_DATABASE_URL) {
       port: process.env.DB_PORT || 5432,
       dialect: "postgres",
       logging: false,
+      dialectOptions,
     }
   );
 }
